@@ -22,14 +22,16 @@ const UserSchema = new mongoose.Schema(
     },
     password: {
       type: String,
-      required: true,
-      min: 6,
     },
     picturePath: {
       type: String,
       default: "",
     },
-    friends: {
+    followers: {
+      type: Array,
+      default: [],
+    },
+    followings: {
       type: Array,
       default: [],
     },
@@ -37,12 +39,12 @@ const UserSchema = new mongoose.Schema(
     occupation: String,
     viewProfile: Number,
     impressions: Number,
-    verifytoken:{
-      type:String,
+    verifytoken: {
+      type: String,
     },
   },
   { timestamps: true }
 );
 
-const User = mongoose.model("User", UserSchema)
-export default User
+const User = mongoose.model("User", UserSchema);
+export default User;

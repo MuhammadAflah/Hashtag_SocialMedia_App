@@ -9,6 +9,7 @@ import { setIsEditing, setUserData } from "state/authSlice";
 import { putDataAPI } from "utils/fetchData";
 import { toast, Toaster } from "react-hot-toast";
 import { useParams } from "react-router-dom";
+import * as yup from "yup"
 
 const UserEdit = ({ user, onSave, onCancel }) => {
   const { palette } = useTheme();
@@ -19,20 +20,32 @@ const UserEdit = ({ user, onSave, onCancel }) => {
   const [email, setEmail] = useState(user?.email);
   const [location, setLocation] = useState(user?.location);
   const [occupation, setOccupation] = useState(user?.occupation);
+  const [validationErrors, setValidationErrors] = useState({});
   const dispatch = useDispatch()
   const { userId } = useParams();
   const token = useSelector((state) => state.token);
 
+  const schema = yup.object().shape({
+    firstName: yup.string().required('First name is required').matches(/^\S.*$/, "Field must not start with white space"),
+    lastName: yup.string().required('Last name is required').matches(/^\S.*$/, "Field must not start with white space"),
+    email: yup.string().email('Invalid email').required('Email is required').matches(/^\S.*$/, "Field must not start with white space"),
+    location: yup.string().required('location is required').matches(/^\S.*$/, "Field must not start with white space"),
+    occupation: yup.string().required('occupation is required').matches(/^\S.*$/, "Field must not start with white space"),
+  });
 
-  const handleSave = () => {
-    onSave({
-      ...user,
-      firstName,
-      lastName,
-      email,
-      location,
-      occupation,
-    });
+
+  const handleSave = async () => {
+    const isValid = await validateForm();
+    if (isValid) {
+      onSave({
+        ...user,
+        firstName,
+        lastName,
+        email,
+        location,
+        occupation,
+      });
+    }
   };
 
   const onPasswordSave = async (userDetails) => {
@@ -52,6 +65,19 @@ const UserEdit = ({ user, onSave, onCancel }) => {
     setIsPasswordEdit(true);
   };
 
+  const validateForm = async () => {
+    try {
+      await schema.validate({ firstName, lastName, email, location, occupation }, { abortEarly: false });
+      setValidationErrors({});
+      return true;
+    } catch (err) {
+      const errors = err.inner.reduce((acc, curr) => ({ ...acc, [curr.path]: curr.message }), {});
+      setValidationErrors(errors);
+      return false;
+    }
+  };
+
+
   return isPasswordEdit ? (
     <ChangePasswordWidget
       user={user}
@@ -60,7 +86,7 @@ const UserEdit = ({ user, onSave, onCancel }) => {
     />
   ) : (
     <WidgetWrapper>
-      <Toaster/>
+      <Toaster />
       <Box p="1rem">
         <Typography
           variant="h4"
@@ -79,10 +105,10 @@ const UserEdit = ({ user, onSave, onCancel }) => {
             alignItems: "center",
             justifyContent: "flex-end",
             mb: "1rem",
-            color: palette.primary.main,
+            color: palette?.primary?.main,
             "&:hover": {
               cursor: "pointer",
-              color: palette.primary.light,
+              color: palette?.primary?.light,
             },
           }}
         >
@@ -95,6 +121,8 @@ const UserEdit = ({ user, onSave, onCancel }) => {
               label="First Name"
               value={firstName}
               onChange={(e) => setFirstName(e.target.value)}
+              error={Boolean(validationErrors.firstName)}
+              helperText={validationErrors.firstName}
             />
           </Grid>
           <Grid item xs={12} md={6}>
@@ -103,6 +131,8 @@ const UserEdit = ({ user, onSave, onCancel }) => {
               label="Last Name"
               value={lastName}
               onChange={(e) => setLastName(e.target.value)}
+              error={Boolean(validationErrors.lastName)}
+              helperText={validationErrors.lastName}
             />
           </Grid>
           <Grid item xs={12} md={6}>
@@ -110,7 +140,10 @@ const UserEdit = ({ user, onSave, onCancel }) => {
               fullWidth
               label="Email"
               value={email}
+              disabled
               onChange={(e) => setEmail(e.target.value)}
+              error={Boolean(validationErrors.email)}
+              helperText={validationErrors.email}
             />
           </Grid>
           <Grid item xs={12} md={6}>
@@ -119,6 +152,8 @@ const UserEdit = ({ user, onSave, onCancel }) => {
               label="Location"
               value={location}
               onChange={(e) => setLocation(e.target.value)}
+              error={Boolean(validationErrors.location)}
+              helperText={validationErrors.location}
             />
           </Grid>
           <Grid item xs={12} md={6}>
@@ -127,6 +162,8 @@ const UserEdit = ({ user, onSave, onCancel }) => {
               label="Occupation"
               value={occupation}
               onChange={(e) => setOccupation(e.target.value)}
+              error={Boolean(validationErrors.occupation)}
+              helperText={validationErrors.occupation}
             />
           </Grid>
         </Grid>

@@ -1,6 +1,5 @@
 import {
   ChatBubbleOutlineOutlined,
-  // DeleteOutlined,
   FavoriteBorderOutlined,
   FavoriteOutlined,
   ShareOutlined,
@@ -23,14 +22,13 @@ import { useDispatch, useSelector } from "react-redux";
 import { setPost } from "state/authSlice";
 import { patchDataAPI, postDataAPI } from "utils/fetchData";
 import * as Yup from "yup";
-import { format } from "timeago.js";
+import TimeAgo from 'timeago.js';
 
 const PostWidget = ({
   postId,
   postUserId,
   name,
   description,
-  //location,
   picturePath,
   userPicturePath,
   likes,
@@ -41,21 +39,22 @@ const PostWidget = ({
   const [comment, setComment] = useState("");
   const [errors, setErrors] = useState({});
   const dispatch = useDispatch();
-  const token = useSelector((state) => state.token);
-  const loggedInUserId = useSelector((state) => state.user._id);
+  const token = useSelector((state) => state?.token);
+  const loggedInUserId = useSelector((state) => state?.user?._id);
   const [isLiked, setIsLiked] = useState(
     Boolean(likes[loggedInUserId])
   );
-  console.log(isLiked,'k');
-  const likeCount = Object.keys(likes).length;
+  const likeCount = Object?.keys(likes)?.length;
   const { palette } = useTheme();
-  const main = palette.neutral.main;
-  const primary = palette.primary.main;
+  const main = palette?.neutral?.main;
+  const primary = palette?.primary?.main;
+  const timeago = new TimeAgo()
 
   const validationSchema = Yup.object().shape({
     comment: Yup.string()
       .required("Comment is required")
-      .matches(/^\S.*$/, "Field must not start with white space"),
+      .matches(/^\S.*$/, "Field must not start with white space")
+      .max(50, "Max 50 words allowed for comment"),
   });
   const patchLike = async () => {
     try {
@@ -93,7 +92,7 @@ const PostWidget = ({
       setComment("");
       setErrors({});
     } catch (error) {
-      if (error.name === "ValidationError") {
+      if (error?.name === "ValidationError") {
         const errors = error.inner.reduce(
           (acc, err) => ({
             ...acc,
@@ -113,7 +112,7 @@ const PostWidget = ({
       <Friend
         friendId={postUserId}
         name={name}
-        subtitle={format(createdAt)}
+        subtitle={timeago.format(createdAt) }
         userPicturePath={userPicturePath}
         postId={postId}
         
@@ -195,10 +194,10 @@ const PostWidget = ({
                       textAlign: "right",
                     }}
                   >
-                    <Typography>{comment.coment}</Typography>
+                    <Typography>{comment?.coment}</Typography>
                     <Box sx={{ textAlign: "end" }}>
                       <Typography component="p" fontSize={10}>
-                        {format(comment.createdAt)}
+                      {timeago.format(comment?.createdAt) }
                       </Typography>
                     </Box>
                   </Box>
@@ -214,8 +213,8 @@ const PostWidget = ({
                   label="Add comment"
                   value={comment}
                   onChange={handleCommentChange}
-                  error={Boolean(errors.comment)}
-                  helperText={errors.comment}
+                  error={Boolean(errors?.comment)}
+                  helperText={errors?.comment}
                   fullWidth
                   maxRows={1}
                   sx={{

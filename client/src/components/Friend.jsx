@@ -1,45 +1,127 @@
-import { PersonAddOutlined, PersonRemoveOutlined, Delete  } from "@mui/icons-material";
-import { Box, IconButton, Typography, useTheme } from "@mui/material";
-import { ConfirmToast } from 'react-confirm-toast'
+import { Box, Typography, useTheme, Button } from "@mui/material";
+import { ConfirmToast } from "react-confirm-toast";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
-import { setFriends, setPosts } from "state/authSlice";
-import { patchDataAPI } from "utils/fetchData";
+import {
+  setFollowers,
+  setFollowings,
+  setPosts,
+  setSuggestions,
+} from "state/authSlice";
+import { deleteDataAPI, patchDataAPI } from "utils/fetchData";
 import FlexBetween from "./FlexBetween";
 import UserImage from "./UserImage";
-import axios from "axios";
 
-
-const Friend = ({ friendId, name, subtitle, userPicturePath, postId }) => {
+const Friend = ({
+  friendId,
+  name,
+  subtitle,
+  userPicturePath,
+  postId,
+  isFriendData,
+}) => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const { _id } = useSelector((state) => state.user);
-  const token = useSelector((state) => state.token);
-  const friends = useSelector((state) => state.user.friends);
-  
+  const { _id } = useSelector((state) => state?.user);
+  const token = useSelector((state) => state?.token);
+  const followings = useSelector((state) => state?.user?.followings);
+  const followers = useSelector((state) => state?.user?.followers);
+
   const { palette } = useTheme();
-  const primaryLight = palette.primary.light;
-  const primaryDark = palette.primary.dark;
-  const main = palette.neutral.main;
-  const medium = palette.neutral.medium;
+  const main = palette?.neutral?.main;
+  const medium = palette?.neutral?.medium;
 
-  const isFriend = friends.find((friend) => friend._id === friendId);
+  const isFollowing = followings?.find((friend) => friend?._id === friendId);
+  const isFollower = followers?.find((friend) => friend?._id === friendId);
 
-  const patchFriend = async () => {
+  const followFriend = async () => {
     try {
-      const {data} = await patchDataAPI(`/users/${_id}/${friendId}`,{},token)
-      dispatch(setFriends({ friends: data }));
+      const { data } = await patchDataAPI(
+        `/users/${_id}/${friendId}/follow`,
+        {},
+        token
+      );
+
+      // const formattedFollowingsData = data.formattedFollowings.map(
+      //   ({ id }) => id
+      // );
+      // const formattedFollowersData = data.formattedFollowers.map(
+      //   ({ id }) => id
+      // );
+
+      // if (isEqual(formattedFollowingsData, formattedFollowersData)) {
+      //   dispatch(setFollowings({ followings: data.formattedFollowings }));
+      //   dispatch(setFollowers({ followers: [] }));
+      //   dispatch(setSuggestions({ suggestions: data.suggestions }));
+
+      // } else {
+      //   dispatch(setFollowings({ followings: data.formattedFollowings }));
+      //   dispatch(setFollowers({ followers: data.formattedFollowers }));
+      //   dispatch(setSuggestions({ suggestions: data.suggestions }));
+
+      // }
+
+      dispatch(setFollowings({ followings: data?.formattedFollowings }));
+      dispatch(setFollowers({ followers: data?.formattedFollowers }));
+      // dispatch(setSuggestions({ suggestions: data.suggestions }));
+    } catch (error) {
+      console.log(error);
+    }
+  };
+  const unFollowFriend = async () => {
+    try {
+      const { data } = await patchDataAPI(
+        `/users/${_id}/${friendId}/unfollow`,
+        {},
+        token
+      );
+
+      // const formattedFollowingsData = data.formattedFollowings.map(
+      //   ({ id }) => id
+      // );
+      // const formattedFollowersData = data.formattedFollowers.map(
+      //   ({ id }) => id
+      // );
+
+      // if (isEqual(formattedFollowingsData, formattedFollowersData)) {
+      //   dispatch(setFollowings({ followings: data.formattedFollowings }));
+      //   dispatch(setFollowers({ followers: [] }));
+      //   dispatch(setSuggestions({ suggestions: data.suggestions }));
+
+      // } else {
+      //   dispatch(setFollowings({ followings: data.formattedFollowings }));
+      //   dispatch(setFollowers({ followers: data.formattedFollowers }));
+      //   dispatch(setSuggestions({ suggestions: data.suggestions }));
+
+      // }
+
+      dispatch(setFollowings({ followings: data?.formattedFollowings }));
+      dispatch(setFollowers({ followers: data?.formattedFollowers }));
+      dispatch(setSuggestions({ suggestions: data?.suggestions }));
+    } catch (error) {
+      console.log(error);
+    }
+  };
+  const followBackFriend = async () => {
+    try {
+      const { data } = await patchDataAPI(
+        `/users/${_id}/${friendId}/followback`,
+        {},
+        token
+      );
+
+      dispatch(setFollowings({ followings: data?.formattedFollowings }));
+      dispatch(setFollowers({ followers: [] }));
+      dispatch(setSuggestions({ suggestions: data?.suggestions }));
     } catch (error) {
       console.log(error);
     }
   };
 
-  const deletePost = async ()=>{
-    const {data} = await axios.delete(`${process.env.REACT_APP_BASE_URL}/posts/${postId}`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    dispatch(setPosts({ posts: data }))
-  } 
+  const deletePost = async () => {
+    const { data } = await deleteDataAPI(`/posts/${postId}`, token);
+    dispatch(setPosts({ posts: data }));
+  };
 
   return (
     <FlexBetween>
@@ -48,7 +130,6 @@ const Friend = ({ friendId, name, subtitle, userPicturePath, postId }) => {
         <Box
           onClick={() => {
             navigate(`/profile/${friendId}`);
-            navigate(0);
           }}
         >
           <Typography
@@ -57,7 +138,7 @@ const Friend = ({ friendId, name, subtitle, userPicturePath, postId }) => {
             fontWeight="500"
             sx={{
               "&:hover": {
-                color: palette.primary.light,
+                color: palette?.primary?.light,
                 cursor: "pointer",
               },
             }}
@@ -69,34 +150,30 @@ const Friend = ({ friendId, name, subtitle, userPicturePath, postId }) => {
           </Typography>
         </Box>
       </FlexBetween>
-      {
-        friendId === _id ? 
+      {!isFriendData && friendId === _id ? (
         <ConfirmToast
-	asModal={false}
-	customCancel={'Cancel'}
-	customConfirm={'Confirm'}
-	customFunction={deletePost}
-	message={'Do you want to continue and execute the function?'}
-	position={'bottom-left'}
-	showCloseIcon={true}
-	theme={'lilac'}
->
-<IconButton sx={{ backgroundColor: primaryLight, p: "0.6rem" }} >
-            <Delete />
-          </IconButton>
-</ConfirmToast> :
-          <IconButton
-          onClick={() => patchFriend()}
-          sx={{ backgroundColor: primaryLight, p: "0.6rem" }}
+          asModal={true}
+          customCancel={"Cancel"}
+          customConfirm={"Confirm"}
+          customFunction={deletePost}
+          message={"Do you want to delete post?"}
+          position={"bottom-left"}
+          showCloseIcon={true}
+          theme={"snow"}
         >
-          {isFriend ? (
-            <PersonRemoveOutlined sx={{ color: primaryDark }} />
+          <Button>Delete</Button>
+        </ConfirmToast>
+      ) : (
+        <Box>
+          {isFollowing ? (
+            <Button onClick={() => unFollowFriend()}>Unfollow</Button>
+          ) : isFollower ? (
+            <Button onClick={() => followBackFriend()}>Followback</Button>
           ) : (
-            <PersonAddOutlined sx={{ color: primaryDark }} />
+            <Button onClick={() => followFriend()}>Follow</Button>
           )}
-        </IconButton>
-      }
-      
+        </Box>
+      )}
     </FlexBetween>
   );
 };

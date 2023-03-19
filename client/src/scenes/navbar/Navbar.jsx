@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Box,
   IconButton,
@@ -9,7 +9,9 @@ import {
   FormControl,
   useTheme,
   useMediaQuery,
+  Avatar,
 } from "@mui/material";
+import CloseIcon from "@mui/icons-material/Close";
 import {
   Search,
   Message,
@@ -21,34 +23,46 @@ import {
   Close,
 } from "@mui/icons-material";
 import { useDispatch, useSelector } from "react-redux";
-import { setMode, setLogout, setIsMessage } from "state/authSlice";
+import { setMode, setLogout } from "state/authSlice";
 import { Link, useNavigate } from "react-router-dom";
 import FlexBetween from "components/FlexBetween";
+import { getDataAPI } from "utils/fetchData";
 
 const Navbar = () => {
   const [isMobileMenuToggled, setIsMobileMenuToggled] = useState(false);
+  const [users, setUsers] = useState([]);
+  const [search, setSearch] = useState("");
+  const [open, setOpen] = useState(false);
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const user = useSelector((state) => state.user);
+  const user = useSelector((state) => state?.user);
+  const token = useSelector((state) => state?.token);
   const isNonMobileScreens = useMediaQuery("(min-width: 1000px)");
-  const isMessage = useSelector((state) => state.isMessage);
-
+  const isMobileScreen = useMediaQuery("(max-width: 999px)");
   const theme = useTheme();
-  const neutralLight = theme.palette.neutral.light;
-  const dark = theme.palette.neutral.dark;
-  const background = theme.palette.background.default;
-  const primaryLight = theme.palette.primary.light;
-  const alt = theme.palette.background.alt;
+  const neutralLight = theme?.palette?.neutral?.light;
+  const dark = theme.palette?.neutral?.dark;
+  const background = theme?.palette?.background?.default;
+  const primaryLight = theme?.palette?.primary?.light;
+  const alt = theme.palette?.background?.alt;
 
-  const fullName = `${user ? user.firstName : "user"} ${
-    user ? user.lastName : "name"
+  const fullName = `${user ? user?.firstName : "user"} ${
+    user ? user?.lastName : "name"
   }`;
 
   const handleMessage = () => {
-    isMessage
-      ? dispatch(setIsMessage({ isMessage: false }))
-      : dispatch(setIsMessage({ isMessage: true }));
+    navigate("/message");
   };
+
+  const getAllUsers = async () => {
+    const { data } = await getDataAPI("/users", token);
+    setUsers(data);
+  };
+
+  useEffect(() => {
+    getAllUsers();
+  }, []); // eslint-disable-line
+
   return (
     <FlexBetween
       padding="1rem 6%"
@@ -68,19 +82,95 @@ const Navbar = () => {
             },
           }}
         >
-          Hashtag
+          Socialelite
         </Typography>
-        {isNonMobileScreens && (
+
+        {/* show search bar only for mobile screens */}
+        {isMobileScreen && (
+          <IconButton onClick={() => setOpen(!open)}>
+            <Search />
+          </IconButton>
+        )}
+
+        {(open || isNonMobileScreens) && (
           <FlexBetween
             backgroundColor={neutralLight}
             borderRadius="9px"
             gap="3rem"
             padding="0.1rem 1.5rem"
           >
-            <InputBase placeholder="Search..." />
+            <InputBase
+              placeholder="Search..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              type="text"
+            />
             <IconButton>
               <Search />
             </IconButton>
+            {search !== "" || open === true ? (
+              <Box
+                display="flex"
+                flexDirection="column"
+                position="absolute"
+                backgroundColor="white"
+                marginTop="15rem"
+                borderRadius="10px"
+                width="300px"
+                boxShadow={4}
+                p={1}
+              >
+                <IconButton
+                  onClick={() => [setOpen(false), setSearch("")]}
+                  style={{ alignSelf: "flex-end" }}
+                >
+                  <CloseIcon fontSize="small" />
+                </IconButton>
+                {users?.length > 0 ? (
+                  <Box>
+                    {users.map((user1) =>
+                      user1?.firstName.toLowerCase().includes(search) |
+                        user1?.lastName.toLowerCase().includes(search) &&
+                      user._id !== user1?.id ? (
+                        <Link
+                          key={user1?._id}
+                          style={{ textDecoration: "none" }}
+                          to={`/profile/${user1?._id}`}
+                        >
+                          <Box
+                            display="flex"
+                            alignItems="center"
+                            justifyContent="space-between"
+                            p={1} 
+                            borderRadius="5px"
+                            _hover={{
+                              backgroundColor: "rgba(255, 255, 255, 0.2)",
+                              cursor: "pointer",
+                            }}
+                          >
+                            <Box sx={{ display: "flex", alignItems: "center" }}>
+                              <Avatar
+                                alt="userImage"
+                                src={`${user1?.picturePath}`}
+                                sx={{ marginRight: 1 }}
+                              />
+                              <Typography
+                                variant="subtitle2"
+                                color={dark}
+                              >
+                                {user1?.firstName} {user1?.lastName}
+                              </Typography>
+                            </Box>
+                          </Box>
+                        </Link>
+                      ) : null
+                    )}
+                  </Box>
+                ) : (
+                  <Typography>User not found.</Typography>
+                )}
+              </Box>
+            ) : null}
           </FlexBetween>
         )}
       </FlexBetween>
@@ -89,19 +179,16 @@ const Navbar = () => {
       {isNonMobileScreens ? (
         <FlexBetween gap="2rem">
           <IconButton onClick={() => dispatch(setMode())}>
-            {theme.palette.mode === "dark" ? (
+            {theme?.palette?.mode === "dark" ? (
               <LightMode sx={{ fontSize: "25px" }} />
             ) : (
               <DarkMode sx={{ color: dark, fontSize: "25px" }} />
             )}
           </IconButton>
-          {/* <IconButton onClick={handleMessage}> */}
-            {/* <Message onClick={handleMessage} sx={{ fontSize: "25px",cursor:"pointer" }} /> */}
-            <Link to="/messages" sx={{color:"black"}}>
-            <Message  sx={{ fontSize: "25px",cursor:"pointer", color:"black" }} />
-            </Link>
-
-          {/* </IconButton> */}
+          <Message
+            onClick={handleMessage}
+            sx={{ fontSize: "25px", cursor: "pointer" }}
+          />
           <Notifications sx={{ fontSize: "25px" }} />
           <Help sx={{ fontSize: "25px" }} />
           <FormControl variant="standard" value={fullName}>
@@ -182,10 +269,7 @@ const Navbar = () => {
                 <LightMode sx={{ color: dark, fontSize: "25px" }} />
               )}
             </IconButton>
-            <Message
-              sx={{ fontSize: "25px" }}
-              onClick={handleMessage}
-            />
+            <Message sx={{ fontSize: "25px" }} onClick={handleMessage} />
             <Notifications sx={{ fontSize: "25px" }} />
             <Help sx={{ fontSize: "25px" }} />
             <FormControl variant="standard" value={fullName}>

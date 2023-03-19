@@ -5,61 +5,76 @@ import {
   WorkOutlineOutlined,
   Chat,
 } from "@mui/icons-material";
-import { Box, Typography, Divider, useTheme } from "@mui/material";
+import { Box, Typography, Divider, useTheme, Button } from "@mui/material";
 import UserImage from "components/UserImage";
 import FlexBetween from "components/FlexBetween";
 import WidgetWrapper from "components/WidgetWrapper";
 import { useDispatch, useSelector } from "react-redux";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { getDataAPI } from "utils/fetchData";
-import { setIsEditing, setUserData } from "state/authSlice";
+import { getDataAPI, patchDataAPI } from "utils/fetchData";
+import { setIsEditing } from "state/authSlice";
 import axios from "axios";
 
-const UserWidget = ({ userId, picturePath, isEditUser, isProfile = false }) => {
+const UserWidget = ({
+  userId,
+  picturePath,
+  isEditUser,
+  isFriendData,
+  isProfile = false,
+}) => {
   const { palette } = useTheme();
   const navigate = useNavigate();
-  const token = useSelector((state) => state.token);
-  const user = useSelector((state) => state.user);
-  const dark = palette.neutral.dark;
-  const medium = palette.neutral.medium;
-  const main = palette.neutral.main;
+  const [friendData, setFriendData] = useState({});
+  const [followers, setFollowers] = useState({});
+  const token = useSelector((state) => state?.token);
+  const user = useSelector((state) => state?.user);
+  const dark = palette?.neutral?.dark;
+  const medium = palette?.neutral?.medium;
+  const main = palette?.neutral?.main;
   const dispatch = useDispatch();
-  const getUser = async () => {
+  const {userId:friendId} = useParams()
+  
+  const followings = useSelector((state) => state?.user?.followings);
+  const [isFriend,setIsFriend] = useState(followings?.find((friend) => friend?._id === friendId))
+  // console.log(friendId,'kk');
+
+  const patchFriend = async () => {
     try {
-      const { data } = await getDataAPI(`/users/${userId}`, token);
-      dispatch(setUserData({user:data}))
+      console.log(friendId,'inside');
+      const { data } = await patchDataAPI(
+        `/users/${user?._id}/${friendId}`,
+        {},
+        token
+      );
+      // dispatch(setFriends({ friends: data }));
+      setIsFriend(!isFriend)
     } catch (error) {
-      console.error(error);
+      console.log(error);
     }
   };
 
-  const handleChat = async () => {
-    try{
-      const res = await axios.post(`${process.env.REACT_APP_BASE_URL}/conversation`,{
-        senderId:user._id,
-        receiverId: userId
-      }, {
-        headers: {
-            "Content-Type": "application/json",
-            'Authorization': `Bearer ${token}`,
-        },})
-
-        if(res.status === 'OK'){
-          navigate(`/chat/${res.data._id}/${userId}`)
-        }
-    }catch (error){
-      console.log(error);
-    }
-        
-  }
-
   useEffect(() => {
-    getUser();
+    const fetchData = async () => {
+      try {
+        const { data } = await getDataAPI(`/users/${userId}`, token);
+        setFriendData(data);
+
+        const { data: followersData } = await getDataAPI(
+          `/users/${userId}/followers`,
+          token
+        );
+        setFollowers(followersData);
+      } catch (error) {
+        console.error(error);
+      }
+    };
+
+    fetchData();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   let handleEditClick = () => {
-      dispatch(setIsEditing({ isEditing: true }));
+    dispatch(setIsEditing({ isEditing: true }));
   };
 
   if (!user) {
@@ -70,14 +85,9 @@ const UserWidget = ({ userId, picturePath, isEditUser, isProfile = false }) => {
     lastName,
     location,
     occupation,
-    viewProfile,
-    impressions,
-    friends,
   } = user;
-
   return (
     <WidgetWrapper
-    // style={isProfile ? {} : { position: "sticky", top: "7.3rem" }}
     >
       {/* FIRST ROW */}
       <FlexBetween
@@ -86,7 +96,10 @@ const UserWidget = ({ userId, picturePath, isEditUser, isProfile = false }) => {
         onClick={() => navigate(`/profile/${userId}`)}
       >
         <FlexBetween gap="0.5rem">
-          <UserImage image={picturePath} isProfile={isProfile} />
+          <UserImage
+            image={isFriendData ? friendData?.user?.picturePath : picturePath}
+            isProfile={!isFriendData && isProfile}
+          />
           <Box mb="1rem">
             <Typography
               variant="h4"
@@ -94,14 +107,19 @@ const UserWidget = ({ userId, picturePath, isEditUser, isProfile = false }) => {
               fontWeight="500"
               sx={{
                 "&:hover": {
-                  color: palette.primary.light,
+                  color: palette?.primary?.light,
                   cursor: "pointer",
                 },
               }}
             >
-              {firstName} {lastName}
+              {isFriendData ? friendData?.user?.firstName : firstName}{" "}
+              {isFriendData ? friendData?.user?.lastName : lastName}
             </Typography>
-            <Typography color={medium}>{friends?.length} friends</Typography>
+            {isFriendData && (
+              <Box >
+                {isFriend ? <Button onClick={() => patchFriend()}>Unfollow</Button> : <Button onClick={() => patchFriend()}>Follow</Button>}
+              </Box>
+            )}
           </Box>
         </FlexBetween>
         {isEditUser && (
@@ -109,36 +127,43 @@ const UserWidget = ({ userId, picturePath, isEditUser, isProfile = false }) => {
             style={{ cursor: "pointer" }}
             onClick={handleEditClick}
           />
-          )}
-          <Chat onClick={handleChat}/>
+        )}
+      {/* {friendData ? <Chat sx={{ margin: "1rem" }} onClick={() => createConverStation(userId)} variant='contained' size='small' >Message</Chat> : ''} */}
       </FlexBetween>
       <Divider />
       {/* SECOND ROW */}
       <Box p="1rem 0">
         <Box display="flex" alignItems="center" gap="1rem" mb="0.5rem">
           <LocationOnOutlined fontSize="large" sx={{ color: main }} />
-          <Typography color={medium}>{location}</Typography>
+          <Typography color={medium}>
+            {isFriendData ? friendData?.user?.location : location}
+          </Typography>
         </Box>
         <Box display="flex" alignItems="center" gap="1rem">
           <WorkOutlineOutlined fontSize="large" sx={{ color: main }} />
-          <Typography color={medium}>{occupation}</Typography>
+          <Typography color={medium}>
+            {isFriendData ? friendData?.user?.occupation : occupation}
+          </Typography>
         </Box>
       </Box>
-
       <Divider />
 
       {/* THIRD ROW */}
       <Box p="1rem 0">
         <FlexBetween mb="0.5rem">
-          <Typography color={medium}>Who's viewed your profile</Typography>
+          <Typography color={medium}>Following</Typography>
           <Typography color={main} fontWeight="500">
-            {viewProfile}
+            {isFriendData
+              ? friendData?.followingCount
+              : followers?.followingCount}
           </Typography>
         </FlexBetween>
         <FlexBetween>
-          <Typography color={medium}>Impressions of your post</Typography>
+          <Typography color={medium}>Followers</Typography>
           <Typography color={main} fontWeight="500">
-            {impressions}
+            {isFriendData
+              ? friendData?.followersCount
+              : followers?.followersCount}
           </Typography>
         </FlexBetween>
       </Box>
@@ -146,37 +171,6 @@ const UserWidget = ({ userId, picturePath, isEditUser, isProfile = false }) => {
       <Divider />
 
       {/* FOURTH ROW */}
-      <Box p="1rem 0">
-        <Typography fontSize="1rem" color={main} fontWeight="500" mb="1rem">
-          Social Profiles
-        </Typography>
-
-        <FlexBetween gap="1rem" mb="0.5rem">
-          <FlexBetween gap="1rem">
-            <img src="../assets/linkedin.png" alt="linkedin" />
-            <Box>
-              <Typography color={main} fontWeight="500">
-                Linkedin
-              </Typography>
-              <Typography color={medium}>Network Platform</Typography>
-            </Box>
-          </FlexBetween>
-          <EditOutlined sx={{ color: main }} />
-        </FlexBetween>
-
-        <FlexBetween gap="1rem">
-          <FlexBetween gap="1rem">
-            <img src="../assets/twitter.png" alt="twitter" />
-            <Box>
-              <Typography color={main} fontWeight="500">
-                Twitter
-              </Typography>
-              <Typography color={medium}>Social Network</Typography>
-            </Box>
-          </FlexBetween>
-          <EditOutlined sx={{ color: main }} />
-        </FlexBetween>
-      </Box>
     </WidgetWrapper>
   );
 };
