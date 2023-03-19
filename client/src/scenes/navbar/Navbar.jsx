@@ -82,7 +82,7 @@ const Navbar = () => {
             },
           }}
         >
-          Socialelite
+          HashTags
         </Typography>
 
         {/* show search bar only for mobile screens */}

@@ -50,7 +50,7 @@ export const ForgotPassword = () => {
           textAlign="center"
         >
           <Typography fontWeight="bold" fontSize="32px" color="primary">
-            Socialelite
+          HashTags
           </Typography>
         </Box>
         <Box

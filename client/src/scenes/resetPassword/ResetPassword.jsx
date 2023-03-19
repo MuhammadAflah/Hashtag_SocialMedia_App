@@ -51,7 +51,7 @@ export const ResetPassword = () => {
           textAlign="center"
         >
           <Typography fontWeight="bold" fontSize="32px" color="primary">
-            Socialelite
+          HashTags
           </Typography>
         </Box>
         <Box
