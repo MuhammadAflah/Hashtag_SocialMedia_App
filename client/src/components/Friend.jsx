@@ -1,4 +1,5 @@
-import { Box, Typography, useTheme, Button } from "@mui/material";
+import { Delete } from "@mui/icons-material";
+import { Box, Typography, useTheme, Button, Tooltip, IconButton } from "@mui/material";
 import { ConfirmToast } from "react-confirm-toast";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
@@ -161,7 +162,11 @@ const Friend = ({
           showCloseIcon={true}
           theme={"snow"}
         >
-          <Button>Delete</Button>
+          <Tooltip title="Delete">
+            <IconButton sx={{  p: "0.6rem" }}>
+              <Delete />
+            </IconButton>
+          </Tooltip>
         </ConfirmToast>
       ) : (
         <Box>

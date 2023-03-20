@@ -1,4 +1,4 @@
-import { Avatar, Box, CardHeader, IconButton, OutlinedInput } from "@mui/material";
+import { Avatar, Box, Button, CardHeader, IconButton, OutlinedInput } from "@mui/material";
 import axios from "axios";
 import WidgetWrapper from "components/WidgetWrapper";
 import React, { useEffect, useRef, useState } from "react";
@@ -20,101 +20,101 @@ const ChatBox = () => {
   const userId = useSelector((state) => state?.user?._id);
   const token = useSelector((state) => state?.token);
   const scrollRef = useRef();
-  const id=useSelector((state)=>state?.ids?.chatId)
-  const friendId=useSelector((state)=>state?.ids?.friendId)
+  const id = useSelector((state) => state?.ids?.chatId)
+  const friendId = useSelector((state) => state?.ids?.friendId)
 
 
   const handleSubmit = async (e) => {
-      e.preventDefault();
-      const message = {
-          sender: userId,
-          text: newMessage,
-          converstationId: id
-      }
-      socket.emit('sendMessage', {
-          senderId: userId,
-          receiverId: friendId,
-          text: newMessage
+    e.preventDefault();
+    const message = {
+      sender: userId,
+      text: newMessage,
+      converstationId: id
+    }
+    socket.emit('sendMessage', {
+      senderId: userId,
+      receiverId: friendId,
+      text: newMessage
+    })
+
+    try {
+      const res = await axios.post(`${process.env.REACT_APP_BASE_URL}/messages`, message, {
+        headers: {
+          "Content-Type": "application/json",
+          'Authorization': `Bearer ${token}`,
+        },
       })
 
-      try {
-          const res = await axios.post(`${process.env.REACT_APP_BASE_URL}/messages`, message, {
-              headers: {
-                  "Content-Type": "application/json",
-                  'Authorization': `Bearer ${token}`,
-              },
-          })
-          
-          setMessages([...messages, res.data]);
-          setNewMessage('');
-      } catch (error) {
-          console.log(error)
-      }
+      setMessages([...messages, res.data]);
+      setNewMessage('');
+    } catch (error) {
+      console.log(error)
+    }
   };
 
 
   useEffect(() => {
-      socket.on('getMessage', (data) => {
-          setArrivalMessage({
-              sender: data?.senderId,
-              text: data?.text,
-              createdAt: new Date()
-          })
+    socket.on('getMessage', (data) => {
+      setArrivalMessage({
+        sender: data?.senderId,
+        text: data?.text,
+        createdAt: new Date()
       })
+    })
   }, [])
 
   useEffect(() => {
-      arrivalMessage && friendId === arrivalMessage.sender &&
-          setMessages((prev) => [...prev, arrivalMessage])
+    arrivalMessage && friendId === arrivalMessage.sender &&
+      setMessages((prev) => [...prev, arrivalMessage])
   }, [arrivalMessage])
 
   useEffect(() => {
-      socket.emit('addUser', userId)
-      socket.on('getUsers', users => {
+    socket.emit('addUser', userId)
+    socket.on('getUsers', users => {
 
-      })
+    })
   }, [userId])
 
   useEffect(() => {
-      const getMessags = async () => {
-          try {
-              const res = await axios.get(`${process.env.REACT_APP_BASE_URL}/messages/${id}`, {
-                  headers: {
-                      'Content-Type': 'multipart/form-data',
-                      Authorization: `Bearer ${token}`,
-                  },
-              });
-              setMessages(res?.data)
-          } catch (error) {
-              console.log(error);
-          }
-      };
-      getMessags();
-  }, [id,friendId]);
-
-  useEffect(() => {
-      const getUser = async () => {
-          try {
-
-              const res = await axios.get(`${process.env.REACT_APP_BASE_URL}/users/${friendId}`, {
-                  headers: {
-                      'Content-Type': 'multipart/form-data',
-                      'Authorization': `Bearer ${token}`,
-                  },
-              })
-              setFriend(res?.data?.user)
-          } catch (error) {
-              console.log(error)
-          }
+    const getMessags = async () => {
+      try {
+        const res = await axios.get(`${process.env.REACT_APP_BASE_URL}/messages/${id}`, {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        setMessages(res?.data)
+      } catch (error) {
+        console.log(error);
       }
+    };
+    getMessags();
+  }, [id, friendId]);
 
-      getUser();
-  }, [id,friendId])
+  useEffect(() => {
+    const getUser = async () => {
+      try {
+
+        const res = await axios.get(`${process.env.REACT_APP_BASE_URL}/users/${friendId}`, {
+          headers: {
+            'Content-Type': 'multipart/form-data',
+            'Authorization': `Bearer ${token}`,
+          },
+        })
+        setFriend(res?.data?.user)
+      } catch (error) {
+        console.log(error)
+      }
+    }
+
+    getUser();
+  }, [id, friendId])
 
 
   useEffect(() => {
-      scrollRef.current?.scrollIntoView({behavior:"smooth"})
-  },[messages])
+    scrollRef.current?.scrollIntoView({ behavior: "smooth" })
+  }, [messages])
 
 
   return (
@@ -122,9 +122,9 @@ const ChatBox = () => {
       <Box flex={4}>
         <Box
           sx={{
-            height: "70vh",
+            height: "90vh",
             width: "99%",
-            border:"none",
+            border: "none",
           }}
         >
           <CardHeader
@@ -148,7 +148,7 @@ const ChatBox = () => {
               },
             }}
           >
-           <Box>
+            <Box>
               {messages &&
                 messages.map((msg, index) => {
                   return (
@@ -167,9 +167,9 @@ const ChatBox = () => {
           >
             <Box
               sx={{
-                marginLeft: "3rem",
-                height: "3rem",
-                width: "90%",
+                // marginLeft: "3rem",
+                height: "4rem",
+                width: "100%",
                 display: "flex",
                 paddingLeft: "1rem",
               }}
@@ -179,6 +179,7 @@ const ChatBox = () => {
                   padding: "1rem",
                   backgroundColor: "white",
                   borderRadius: "20px",
+                  marginBottom: "1rem"
                 }}
                 placeholder="Type here"
                 multiline
@@ -188,7 +189,7 @@ const ChatBox = () => {
                 inputProps={{ "aria-label": "Type Message" }}
               />
             </Box>
-            <SendRoundedIcon
+            {/* <SendRoundedIcon
               onClick={handleSubmit}
               sx={{
                 backgroundColor: "#bc80d4",
@@ -203,7 +204,20 @@ const ChatBox = () => {
                   color: "black",
                 },
               }}
-            />
+            /> */}
+            <Button onClick={handleSubmit} variant="contained"
+            sx={{
+              borderRadius: "30%",
+              cursor: "pointer",
+              height: "3rem",
+              margin:"3px",
+              "&:hover":{
+                backgroundColor:"green",
+                color:"black"
+              }
+            }}
+            >Send</Button>
+
           </Box>
         </Box>
       </Box>
