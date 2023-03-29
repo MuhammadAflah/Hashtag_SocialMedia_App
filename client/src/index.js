@@ -6,6 +6,8 @@ import { Provider } from "react-redux";
 import store, { persistor } from "state/store";
 import { PersistGate } from "redux-persist/integration/react";
 import { GoogleOAuthProvider } from '@react-oauth/google';
+import 'mdb-react-ui-kit/dist/css/mdb.min.css';
+import "@fortawesome/fontawesome-free/css/all.min.css";
 
 console.log(process.env.REACT_APP_CLIENT_ID);
 
